@@ -7,12 +7,12 @@ from collections import defaultdict
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, CallbackQueryHandler,
-    MessageHandler, ContextTypes, filters
+    MessageHandler, ContextTypes, filters, JobQueue
 )
 import asyncio
 import nest_asyncio
 
-# ✅ Apply nest_asyncio patch for Termux
+# ✅ Apply nest_asyncio patch for Termux or PythonAnywhere
 nest_asyncio.apply()
 
 # ✅ Bot Token
@@ -134,7 +134,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     }
     await query.message.reply_text(prompts.get(query.data, "Enter input:"))
 
-# ✅ Handle input (Final Version)
+# ✅ Handle input
 async def handle_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
     if not is_authorized(user_id) and user_id not in ADMINS:
@@ -152,11 +152,7 @@ async def handle_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         async with httpx.AsyncClient(timeout=20) as client:
-            try:
-                response = await client.get(url)
-            except httpx.HTTPStatusError as e:
-                await update.message.reply_text("❌ Server error. Please try again later.")
-                return
+            response = await client.get(url)
 
         status = response.status_code
 
@@ -185,7 +181,7 @@ async def handle_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except httpx.RequestError:
         await update.message.reply_text("❌ Network error. Check your connection or try again later.")
         return
-    except Exception as e:
+    except Exception:
         await update.message.reply_text("❌ Unexpected error. Please try again.")
         return
 
@@ -259,17 +255,19 @@ async def check_expired(context: ContextTypes.DEFAULT_TYPE):
 # ✅ Main runner
 async def main():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
+
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("add", add_user))
     app.add_handler(CommandHandler("listuser", list_users))
     app.add_handler(CommandHandler("remove", remove_user))
     app.add_handler(CallbackQueryHandler(handle_callback))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_input))
+
     app.job_queue.run_repeating(check_expired, interval=86400, first=10)
 
-    print("Bot is live. Listening for commands...")
+    print("✅ Bot is live and running.")
     await app.run_polling()
 
-# ✅ Safe entry point for Termux (patched with nest_asyncio)
+# ✅ Entry Point
 if __name__ == '__main__':
     asyncio.run(main())
