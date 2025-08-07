@@ -1,0 +1,4 @@
+
+python-telegram-bot==20.6
+httpx==0.25.1          # Compatible with PTB 20.6
+nest_asyncio==1.6.0
