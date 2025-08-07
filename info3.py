@@ -271,3 +271,8 @@ async def main():
 
     print("✅ Bot is live and running.")
     await app.run_polling()
+
+
+if __name__ == '__main__':
+    import asyncio
+    asyncio.run(main())
