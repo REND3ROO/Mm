@@ -263,11 +263,11 @@ async def main():
     app.add_handler(CallbackQueryHandler(handle_callback))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_input))
 
-    app.job_queue.run_repeating(check_expired, interval=86400, first=10)
+    # ✅ Add the job queue AFTER app is initialized
+    async def post_init(application):
+        application.job_queue.run_repeating(check_expired, interval=86400, first=10)
+
+    app.post_init = post_init
 
     print("✅ Bot is live and running.")
     await app.run_polling()
-
-# ✅ Entry Point
-if __name__ == '__main__':
-    asyncio.run(main())
